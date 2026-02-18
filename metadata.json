@@ -1,0 +1,8 @@
+{
+  "name": "La Plante Fitness",
+  "description": "A premium personal training platform for Justin La Plante and his clients, featuring workout tracking, meal plans, and progress analytics.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
