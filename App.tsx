@@ -71,76 +71,6 @@ const App: React.FC = () => {
     setSelectedClientId(null);
   };
 
-  const toggleExercise = (clientId: string, workoutId: string, exerciseId: string) => {
-    setState(prev => {
-      const clientWorkouts = [...(prev.workouts[clientId] || [])];
-      const workoutIdx = clientWorkouts.findIndex(w => w.id === workoutId);
-      if (workoutIdx === -1) return prev;
-      
-      const updatedExercises = clientWorkouts[workoutIdx].exercises.map(ex => 
-        ex.id === exerciseId ? { ...ex, completed: !ex.completed } : ex
-      );
-      
-      const isNowCompleted = updatedExercises.every(ex => ex.completed);
-      clientWorkouts[workoutIdx] = { 
-        ...clientWorkouts[workoutIdx], 
-        exercises: updatedExercises,
-        isCompleted: isNowCompleted
-      };
-
-      const updatedClients = prev.clients.map(c => 
-        c.id === clientId ? ({ ...c, todayStatus: (isNowCompleted ? 'Completed' : 'In Progress') as 'Completed' | 'In Progress' | 'Not Started' } as User) : c
-      );
-      
-      return {
-        ...prev,
-        clients: updatedClients,
-        workouts: { ...prev.workouts, [clientId]: clientWorkouts }
-      };
-    });
-  };
-
-  const logSetData = (clientId: string, workoutId: string, exerciseId: string, weight: number, reps: number) => {
-    setState(prev => {
-      const clientWorkouts = [...(prev.workouts[clientId] || [])];
-      const workoutIdx = clientWorkouts.findIndex(w => w.id === workoutId);
-      if (workoutIdx === -1) return prev;
-
-      const updatedExercises = clientWorkouts[workoutIdx].exercises.map(ex => {
-        if (ex.id === exerciseId) {
-          const loggedSets = [...(ex.loggedSets || []), { weight, reps }];
-          return { ...ex, loggedSets, completed: loggedSets.length >= ex.sets };
-        }
-        return ex;
-      });
-
-      clientWorkouts[workoutIdx] = { ...clientWorkouts[workoutIdx], exercises: updatedExercises };
-      return { ...prev, workouts: { ...prev.workouts, [clientId]: clientWorkouts } };
-    });
-  };
-
-  const addWeightMetric = () => {
-    if (!currentUser || !newWeight) return;
-    const weightVal = parseFloat(newWeight);
-    if (isNaN(weightVal)) return;
-
-    const newMetric: Metric = {
-      date: new Date().toISOString().split('T')[0],
-      weight: weightVal,
-      strengthScore: 100,
-      energy: 8
-    };
-
-    setState(prev => ({
-      ...prev,
-      metrics: {
-        ...prev.metrics,
-        [currentUser.id]: [...(prev.metrics[currentUser.id] || []), newMetric]
-      }
-    }));
-    setNewWeight('');
-  };
-
   const updateBusinessConfig = (updates: Partial<typeof state.config>) => {
     setState(prev => ({
       ...prev,
@@ -151,6 +81,10 @@ const App: React.FC = () => {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert("File is too large. Please keep it under 2MB.");
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         updateBusinessConfig({ logoUrl: reader.result as string });
@@ -159,20 +93,8 @@ const App: React.FC = () => {
     }
   };
 
-  const sendChatMessage = () => {
-    if (!chatInput.trim() || !currentUser) return;
-    const msg = {
-      id: Math.random().toString(),
-      senderId: currentUser.id,
-      receiverId: currentUser.role === UserRole.ADMIN ? selectedClientId || 'c-1' : 'admin-1',
-      text: chatInput,
-      timestamp: Date.now()
-    };
-    setState(prev => ({
-      ...prev,
-      messages: [...prev.messages, msg]
-    }));
-    setChatInput('');
+  const removeLogo = () => {
+    updateBusinessConfig({ logoUrl: undefined });
   };
 
   useEffect(() => {
@@ -189,69 +111,33 @@ const App: React.FC = () => {
     switch (activeTab) {
       case 'clients':
         return (
-          <div className="space-y-8 transition-all duration-500 animate-fade-in">
-            {selectedClientId ? (
-              <div className="space-y-6">
-                <button onClick={() => setSelectedClientId(null)} className="flex items-center gap-2 text-slate-400 hover:text-brand-600 font-black text-xs uppercase transition-all tracking-widest">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path d="M15 19l-7-7 7-7" /></svg>
-                  Back to Clients
-                </button>
-                <div className="flex flex-col xl:flex-row gap-6 items-start">
-                  <div className="flex-1 space-y-6 w-full">
-                    <header className="flex items-center gap-4">
-                      <img src={state.clients.find(c => c.id === selectedClientId)?.avatar} className="w-16 h-16 rounded-xl object-cover ring-2 ring-slate-50 shadow-md" />
-                      <div>
-                        <h2 className="text-3xl font-brand font-black text-slate-900 leading-tight">{state.clients.find(c => c.id === selectedClientId)?.name}</h2>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <span className="w-2 h-2 bg-brand-500 rounded-full animate-pulse" />
-                          <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Athlete Details</p>
-                        </div>
-                      </div>
-                    </header>
-                    <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm">
-                      <h3 className="text-xl font-brand font-black mb-6 text-slate-800 tracking-tight">Performance Biometrics</h3>
-                      <MetricsChart data={state.metrics[selectedClientId] || []} />
+          <div className="space-y-8 animate-fade-in">
+            <h2 className="text-4xl font-brand font-black text-slate-900 tracking-tight">Active Clients</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {state.clients.map(client => (
+                <div key={client.id} onClick={() => setSelectedClientId(client.id)} className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all cursor-pointer group">
+                  <div className="flex items-center gap-4">
+                    <img src={client.avatar} className="w-14 h-14 rounded-lg object-cover ring-2 ring-slate-50" />
+                    <div>
+                      <h4 className="text-xl font-black text-slate-900 group-hover:text-brand-600 transition-colors">{client.name}</h4>
+                      <p className="text-xs text-slate-400 font-black uppercase tracking-widest">{client.email}</p>
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-8">
-                <div>
-                  <h2 className="text-4xl font-brand font-black text-slate-900 tracking-tight">Active Clients</h2>
-                  <p className="text-slate-500 mt-2 font-black text-xs uppercase tracking-widest">Client Management Protocol</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {state.clients.map(client => (
-                    <div 
-                      key={client.id} 
-                      onClick={() => setSelectedClientId(client.id)}
-                      className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all cursor-pointer group relative overflow-hidden"
-                    >
-                      <div className="absolute top-0 left-0 w-full h-1 bg-brand-500 opacity-0 group-hover:opacity-100 transition-all" />
-                      <div className="relative mb-4 flex items-center gap-4">
-                        <img src={client.avatar} className="w-14 h-14 rounded-lg object-cover ring-2 ring-slate-50 shadow-sm" />
-                        <div>
-                          <h4 className="text-xl font-black text-slate-900 group-hover:text-brand-600 transition-colors">{client.name}</h4>
-                          <p className="text-xs text-slate-400 font-black uppercase tracking-widest">{client.email}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
         );
       case 'settings':
         return (
-          <div className="animate-fade-in transition-all space-y-8 max-w-lg">
+          <div className="animate-fade-in space-y-8 max-w-lg">
             <div>
               <h2 className="text-4xl font-brand font-black text-slate-900 tracking-tight">Branding Control</h2>
               <p className="text-slate-500 mt-2 font-black text-xs uppercase tracking-widest">Business Identity Management</p>
             </div>
-            <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm space-y-6">
-              <div className="space-y-2">
+            
+            <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm space-y-8">
+              <div className="space-y-3">
                 <label className="text-xs font-black uppercase tracking-widest text-slate-400">Business Name</label>
                 <input 
                   type="text" 
@@ -259,6 +145,42 @@ const App: React.FC = () => {
                   onChange={(e) => updateBusinessConfig({ name: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-black focus:ring-2 focus:ring-brand-500/10 outline-none"
                 />
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400 block">Brand Logo</label>
+                <div className="flex flex-col sm:flex-row items-center gap-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="relative group">
+                    {state.config.logoUrl ? (
+                      <img src={state.config.logoUrl} className="w-24 h-24 rounded-2xl object-cover shadow-xl border-4 border-white" />
+                    ) : (
+                      <div className="w-24 h-24 bg-brand-500 rounded-2xl flex items-center justify-center text-white font-brand font-black text-3xl shadow-xl border-4 border-white">
+                        {state.config.name.charAt(0)}
+                      </div>
+                    )}
+                    {state.config.logoUrl && (
+                      <button 
+                        onClick={removeLogo}
+                        className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 space-y-2 text-center sm:text-left">
+                    <h5 className="text-sm font-black text-slate-900">Custom Brand Identity</h5>
+                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest leading-relaxed">
+                      Upload your logo to update headers, login screens, and reports globally.
+                    </p>
+                    <div className="pt-2">
+                      <input type="file" accept="image/*" onChange={handleLogoUpload} id="logo-upload" className="hidden" />
+                      <label htmlFor="logo-upload" className="inline-block bg-brand-900 text-white px-5 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest cursor-pointer hover:bg-brand-700 transition-all shadow-md">
+                        {state.config.logoUrl ? 'Change Logo' : 'Upload Logo'}
+                      </label>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -272,45 +194,16 @@ const App: React.FC = () => {
     switch (activeTab) {
       case 'home':
         return (
-          <div className="space-y-8 animate-fade-in transition-all">
+          <div className="space-y-8 animate-fade-in">
             <header>
               <h2 className="text-5xl font-brand font-black text-slate-900 tracking-tight leading-none">Athlete Dashboard</h2>
               <p className="text-slate-400 font-black text-sm mt-3 italic uppercase tracking-widest">Protocol Start • {currentUser?.name.split(' ')[0]}</p>
             </header>
-
-            <div className="grid gap-6">
-              <div className="bg-brand-900 text-white p-6 rounded-[1.5rem] shadow-lg shadow-brand-900/10 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-80 h-80 bg-brand-400/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-[60px]" />
-                <div className="relative z-10">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-8 h-8 bg-brand-400/20 rounded-lg flex items-center justify-center backdrop-blur-xl border border-white/10">
-                      <span className="text-brand-300 text-xs">✨</span>
-                    </div>
-                    <h4 className="text-xs font-black uppercase tracking-[0.3em] text-brand-300">Coaching Insight</h4>
-                  </div>
-                  <p className="text-2xl sm:text-3xl font-black leading-tight italic pr-4">"{aiInsight || "Consistency is your primary protocol for growth."}"</p>
-                </div>
-              </div>
-
-              <div className="bg-white p-8 rounded-[1.5rem] shadow-sm border border-slate-100 flex flex-col sm:flex-row items-center gap-6 hover:shadow-xl transition-all cursor-pointer" onClick={() => setActiveTab('workout')}>
-                <div className="w-16 h-16 bg-brand-50 rounded-xl flex items-center justify-center text-4xl shadow-inner border border-brand-100 transition-transform group-hover:scale-110">🔥</div>
-                <div className="flex-1 text-center sm:text-left">
-                  <span className="text-xs font-black text-brand-600 bg-brand-50 px-3 py-1 rounded-full uppercase tracking-[0.1em] mb-2 inline-block">Daily Protocol</span>
-                  <h4 className="text-3xl font-black text-slate-900 leading-none">Today's Training</h4>
-                </div>
-                <button className="bg-brand-900 text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-[0.1em] shadow-md hover:bg-brand-700 whitespace-nowrap">Open Session</button>
-              </div>
+            <div className="bg-brand-900 text-white p-8 rounded-[1.5rem] shadow-lg relative overflow-hidden">
+               <h4 className="text-xs font-black uppercase tracking-[0.3em] text-brand-300 mb-4">Coaching Insight</h4>
+               <p className="text-2xl sm:text-3xl font-black leading-tight italic">"{aiInsight || "Consistency is your primary protocol for growth."}"</p>
             </div>
-
-            <section className="pb-4">
-              <div className="flex justify-between items-end mb-6">
-                <div>
-                  <h3 className="text-3xl font-brand font-black text-slate-900 tracking-tight">Performance History</h3>
-                </div>
-                <button onClick={() => setActiveTab('progress')} className="text-brand-700 font-black text-xs uppercase tracking-widest hover:underline px-2 py-1">View Full Log</button>
-              </div>
-              <MetricsChart data={state.metrics[currentUser?.id || ''] || []} />
-            </section>
+            <MetricsChart data={state.metrics[currentUser?.id || ''] || []} />
           </div>
         );
       default: return null;
@@ -319,38 +212,21 @@ const App: React.FC = () => {
 
   if (!isLoggedIn || !currentUser) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white overflow-hidden relative transition-all duration-1000">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white overflow-hidden relative">
         <div className="absolute top-0 left-0 w-full h-1 bg-brand-600 animate-pulse" />
-        <div className="max-w-xs w-full text-center relative z-10 animate-fade-in">
-          <div className="w-16 h-16 bg-brand-600 rounded-xl mb-8 mx-auto flex items-center justify-center text-3xl font-black shadow-2xl transition-all hover:scale-110">
+        <div className="max-w-xs w-full text-center animate-fade-in">
+          <div className="mb-8 mx-auto flex items-center justify-center">
             {state.config.logoUrl ? (
-              <img src={state.config.logoUrl} className="w-full h-full object-cover rounded-xl" />
-            ) : 'L'}
+              <img src={state.config.logoUrl} className="w-20 h-20 object-cover rounded-2xl shadow-2xl border-4 border-slate-900" />
+            ) : (
+              <div className="w-20 h-20 bg-brand-600 rounded-2xl flex items-center justify-center text-4xl font-black shadow-2xl">L</div>
+            )}
           </div>
           <h1 className="text-4xl font-brand font-black mb-2 tracking-tight">{state.config.name}</h1>
           <p className="text-slate-500 mb-10 text-xs font-black uppercase tracking-[0.2em]">Elite Performance Protocol</p>
-          
           <div className="space-y-4">
-            {loading ? (
-              <div className="flex items-center justify-center py-4">
-                <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : (
-              <>
-                <button 
-                  onClick={() => handleLogin(UserRole.ADMIN)}
-                  className="w-full bg-brand-600 text-white py-4 rounded-xl font-black text-sm hover:bg-brand-500 transition-all active:scale-95 shadow-xl shadow-brand-500/10 uppercase tracking-widest"
-                >
-                  Coach Portal
-                </button>
-                <button 
-                  onClick={() => handleLogin(UserRole.CLIENT)}
-                  className="w-full bg-slate-900 text-slate-400 py-4 rounded-xl font-black text-sm hover:bg-slate-800 transition-all border border-slate-800 active:scale-95 uppercase tracking-widest"
-                >
-                  Client Access
-                </button>
-              </>
-            )}
+            <button onClick={() => handleLogin(UserRole.ADMIN)} className="w-full bg-brand-600 text-white py-4 rounded-xl font-black text-sm hover:bg-brand-500 transition-all uppercase tracking-widest">Coach Portal</button>
+            <button onClick={() => handleLogin(UserRole.CLIENT)} className="w-full bg-slate-900 text-slate-400 py-4 rounded-xl font-black text-sm hover:bg-slate-800 transition-all border border-slate-800 uppercase tracking-widest">Client Access</button>
           </div>
         </div>
       </div>
@@ -358,13 +234,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <Layout 
-      user={currentUser} 
-      onLogout={handleLogout} 
-      activeTab={activeTab} 
-      setActiveTab={setActiveTab}
-      config={state.config}
-    >
+    <Layout user={currentUser} onLogout={handleLogout} activeTab={activeTab} setActiveTab={setActiveTab} config={state.config}>
       {currentUser.role === UserRole.ADMIN ? renderAdminView() : renderClientView()}
     </Layout>
   );
