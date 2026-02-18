@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Metric } from '../types';
+import { Metric } from '../types.ts';
 
 interface MetricsChartProps {
   data: Metric[];

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import Layout from './components/Layout';
-import MetricsChart from './components/MetricsChart';
-import { UserRole, User, AppState, Metric, Exercise, WorkoutProgram } from './types';
-import { ADMIN_USER, DEMO_CLIENTS, INITIAL_TIPS, INITIAL_METRICS } from './constants';
-import { generateWorkoutAdvice } from './services/geminiService';
+import Layout from './components/Layout.tsx';
+import MetricsChart from './components/MetricsChart.tsx';
+import { UserRole, User, AppState, Metric } from './types.ts';
+import { ADMIN_USER, DEMO_CLIENTS, INITIAL_TIPS, INITIAL_METRICS } from './constants.ts';
+import { generateWorkoutAdvice } from './services/geminiService.ts';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -30,7 +30,6 @@ const App: React.FC = () => {
   const [chatInput, setChatInput] = useState<string>('');
   const [activeExerciseId, setActiveExerciseId] = useState<string | null>(null);
 
-  // Initialize workout for the demo client if not exists
   useEffect(() => {
     if (!state.workouts['c-1']) {
       setState(prev => ({
@@ -89,7 +88,6 @@ const App: React.FC = () => {
         isCompleted: isNowCompleted
       };
 
-      // Explicitly cast to User to ensure todayStatus matches the union type literal
       const updatedClients = prev.clients.map(c => 
         c.id === clientId ? ({ ...c, todayStatus: (isNowCompleted ? 'Completed' : 'In Progress') as 'Completed' | 'In Progress' | 'Not Started' } as User) : c
       );

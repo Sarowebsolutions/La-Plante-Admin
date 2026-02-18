@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { UserRole, User, BusinessConfig } from '../types';
+import { UserRole, User, BusinessConfig } from '../types.ts';
 
 interface LayoutProps {
   user: User;
