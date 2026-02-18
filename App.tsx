@@ -218,7 +218,7 @@ const App: React.FC = () => {
             ) : (
               <div className="space-y-8">
                 <div>
-                  <h2 className="text-3xl font-brand font-black text-slate-900 tracking-tight">Active Clients</h2>
+                  <h2 className="text-4xl font-brand font-black text-slate-900 tracking-tight">Active Clients</h2>
                   <p className="text-slate-500 mt-2 font-black text-xs uppercase tracking-widest">Client Management Protocol</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -232,7 +232,7 @@ const App: React.FC = () => {
                       <div className="relative mb-4 flex items-center gap-4">
                         <img src={client.avatar} className="w-14 h-14 rounded-lg object-cover ring-2 ring-slate-50 shadow-sm" />
                         <div>
-                          <h4 className="text-lg font-black text-slate-900 group-hover:text-brand-600 transition-colors">{client.name}</h4>
+                          <h4 className="text-xl font-black text-slate-900 group-hover:text-brand-600 transition-colors">{client.name}</h4>
                           <p className="text-xs text-slate-400 font-black uppercase tracking-widest">{client.email}</p>
                         </div>
                       </div>
@@ -247,7 +247,7 @@ const App: React.FC = () => {
         return (
           <div className="animate-fade-in transition-all space-y-8 max-w-lg">
             <div>
-              <h2 className="text-3xl font-brand font-black text-slate-900 tracking-tight">Branding Control</h2>
+              <h2 className="text-4xl font-brand font-black text-slate-900 tracking-tight">Branding Control</h2>
               <p className="text-slate-500 mt-2 font-black text-xs uppercase tracking-widest">Business Identity Management</p>
             </div>
             <div className="bg-white p-6 rounded-[1.5rem] border border-slate-100 shadow-sm space-y-6">
@@ -274,8 +274,8 @@ const App: React.FC = () => {
         return (
           <div className="space-y-8 animate-fade-in transition-all">
             <header>
-              <h2 className="text-4xl font-brand font-black text-slate-900 tracking-tight leading-none">Athlete Dashboard</h2>
-              <p className="text-slate-400 font-black text-xs mt-3 italic uppercase tracking-widest">Protocol Start • {currentUser?.name.split(' ')[0]}</p>
+              <h2 className="text-5xl font-brand font-black text-slate-900 tracking-tight leading-none">Athlete Dashboard</h2>
+              <p className="text-slate-400 font-black text-sm mt-3 italic uppercase tracking-widest">Protocol Start • {currentUser?.name.split(' ')[0]}</p>
             </header>
 
             <div className="grid gap-6">
@@ -288,7 +288,7 @@ const App: React.FC = () => {
                     </div>
                     <h4 className="text-xs font-black uppercase tracking-[0.3em] text-brand-300">Coaching Insight</h4>
                   </div>
-                  <p className="text-xl sm:text-2xl font-black leading-tight italic pr-4">"{aiInsight || "Consistency is your primary protocol for growth."}"</p>
+                  <p className="text-2xl sm:text-3xl font-black leading-tight italic pr-4">"{aiInsight || "Consistency is your primary protocol for growth."}"</p>
                 </div>
               </div>
 
@@ -296,7 +296,7 @@ const App: React.FC = () => {
                 <div className="w-16 h-16 bg-brand-50 rounded-xl flex items-center justify-center text-4xl shadow-inner border border-brand-100 transition-transform group-hover:scale-110">🔥</div>
                 <div className="flex-1 text-center sm:text-left">
                   <span className="text-xs font-black text-brand-600 bg-brand-50 px-3 py-1 rounded-full uppercase tracking-[0.1em] mb-2 inline-block">Daily Protocol</span>
-                  <h4 className="text-2xl font-black text-slate-900 leading-none">Today's Training</h4>
+                  <h4 className="text-3xl font-black text-slate-900 leading-none">Today's Training</h4>
                 </div>
                 <button className="bg-brand-900 text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-[0.1em] shadow-md hover:bg-brand-700 whitespace-nowrap">Open Session</button>
               </div>
@@ -305,7 +305,7 @@ const App: React.FC = () => {
             <section className="pb-4">
               <div className="flex justify-between items-end mb-6">
                 <div>
-                  <h3 className="text-2xl font-brand font-black text-slate-900 tracking-tight">Performance History</h3>
+                  <h3 className="text-3xl font-brand font-black text-slate-900 tracking-tight">Performance History</h3>
                 </div>
                 <button onClick={() => setActiveTab('progress')} className="text-brand-700 font-black text-xs uppercase tracking-widest hover:underline px-2 py-1">View Full Log</button>
               </div>
@@ -327,7 +327,7 @@ const App: React.FC = () => {
               <img src={state.config.logoUrl} className="w-full h-full object-cover rounded-xl" />
             ) : 'L'}
           </div>
-          <h1 className="text-3xl font-brand font-black mb-2 tracking-tight">{state.config.name}</h1>
+          <h1 className="text-4xl font-brand font-black mb-2 tracking-tight">{state.config.name}</h1>
           <p className="text-slate-500 mb-10 text-xs font-black uppercase tracking-[0.2em]">Elite Performance Protocol</p>
           
           <div className="space-y-4">
